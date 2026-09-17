@@ -24,7 +24,7 @@
 </p>
 
 <p align="center">
-  <a href="https://docclaw.harperwork.cn/"><img src="public/preview.png" alt="DocClaw 预览图" width="800"></a>
+  <a href="https://docclaw.harperwork.cn/"><img src="./public/preview.png" alt="DocClaw 预览图" width="800"></a>
 </p>
 
 **DocClaw —— 企业产品文档智能维护 Agent，让产品文档自己活起来。**
@@ -112,13 +112,8 @@ setx DASHSCOPE_API_KEY "sk-你的APIKey"
 streamlit run frontend/app.py
 ```
 
-浏览器访问终端输出的本地地址（默认 `http://localhost:8501`），点击「开始制作」进入工作区，在侧边栏「功能 → 需求拆解」中体验。
+浏览器访问终端输出的本地地址（默认 `http://localhost:8501`），点击「开始制作」进入工作区，在侧边栏「功能」中体验。
 
 ## 技术特性
 
-- **两阶段对话链**：阶段一围绕目标用户、业务场景、核心痛点等六个维度逐轮追问（每次只问一个问题）；模型输出 `【DESC】` 标记后自动衔接阶段二需求拆解链
-- **token 级流式输出**：全链路 SSE 流式渲染，打字机式回复（解决了 `ChatTongyi` 默认 `streaming=False` 导致公共 `.stream()` 退化为整块调用的问题）
-- **多轮会话记忆**：`RunnableWithMessageHistory` + 文件存储，uuid 会话隔离，同一会话内上下文自动保持
-- **链路式输出格式化**：链尾函数节点将模型 JSON 输出解析为排版美观的 Markdown 需求卡片
-- **会话快照归档**：完成需求拆解后自动保存「对话时间 + 功能来源 + session_id + 完整对话记录」，列表 / 详情 / 删除闭环完整
-- **工程安全**：API Key 仅从环境变量读取；文件读写统一 `basename` 防护，避免目录穿越；存储路径基于 `__file__` 推导，与启动工作目录无关
+

@@ -1,0 +1,31 @@
+# ---- 设计素材 ----
+素材/
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# ---- 虚拟环境 ----
+venv/
+.venv/
+env/
+
+# ---- IDE ----
+.idea/
+.vscode/
+
+# ---- 环境变量与密钥（切勿提交）----
+.env
+*.env
+
+# ---- 运行时数据 ----
+chat_history/
+chroma_db/
+md5.text
+docclaw-main/
+
+# ---- 系统文件 ----
+.DS_Store
+Thumbs.db
