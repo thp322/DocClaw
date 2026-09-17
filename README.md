@@ -27,9 +27,9 @@
   <a href="https://docclaw.harperwork.cn/"><img src="./public/preview.png" alt="DocClaw 预览图" width="800"></a>
 </p>
 
-**DocClaw —— 企业产品文档智能维护 Agent，让产品文档自己活起来。**
+**DocClaw —— 企业产品文档智能维护 Agent，让产品文档自己活起来**
 
-围绕产品文档的完整生命周期，DocClaw 提供六大核心能力：需求拆解 · 竞品调研 · PRD 生成 · 影响评估 · 记忆沉淀 · 文档管理。
+围绕产品文档的完整生命周期，DocClaw 提供六大核心能力：需求拆解 · 竞品调研 · PRD 生成 · 影响评估 · 记忆沉淀 · 文档管理
 
 ## 功能特性
 

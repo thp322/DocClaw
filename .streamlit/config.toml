@@ -1,0 +1,18 @@
+# Streamlit 容器内运行配置（被工作目录 /app 下的 .streamlit/config.toml 自动加载）
+
+[server]
+headless = true
+address = "0.0.0.0"
+port = 8501
+# 经 nginx-proxy 反代同源访问，关闭 CORS 限制
+enableCORS = false
+# nginx-proxy 会透传 X-Forwarded-Proto: https，Streamlit 据此识别 HTTPS
+enableXsrfProtection = true
+maxUploadSize = 200
+
+[browser]
+# 关闭官方遥测
+gatherUsageStats = false
+# 不在启动时自动弹出浏览器（容器内无桌面）
+serverAddress = "0.0.0.0"
+serverPort = 8501

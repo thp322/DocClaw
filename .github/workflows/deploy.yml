@@ -1,0 +1,97 @@
+name: Build and Deploy to Aliyun
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: harper0322/doc-claw
+  SERVER_HOST: 47.107.135.232
+  SERVER_USER: root
+  SERVER_PORT: 22
+  CONTAINER_NAME: doc-claw
+  PROJECT_DIR: /opt/doc-claw
+  DOMAIN: docclaw.harperwork.cn
+  PROXY_NETWORK: proxy-net
+  LETSENCRYPT_EMAIL: 2656245936@qq.com
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server via nginx-proxy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ env.SERVER_HOST }}
+          username: ${{ env.SERVER_USER }}
+          port: ${{ env.SERVER_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+
+            # 首次部署的目录准备（已存在则无副作用）
+            mkdir -p ${{ env.PROJECT_DIR }}/data/chat_history
+            # API Key 等敏感配置放在服务器本地 env 文件（不入库、不进镜像）；
+            # touch 保证文件存在，避免 --env-file 报错
+            touch ${{ env.PROJECT_DIR }}/.env
+
+            echo "📦 拉取最新镜像..."
+            docker pull ${{ env.IMAGE_NAME }}:latest
+
+            if docker ps -a --format '{{.Names}}' | grep -q '^${{ env.CONTAINER_NAME }}$'; then
+              echo "🛑 停止并移除旧容器..."
+              docker stop ${{ env.CONTAINER_NAME }}
+              docker rm ${{ env.CONTAINER_NAME }}
+            fi
+
+            echo "🚀 启动新容器..."
+            docker run -d \
+              --name ${{ env.CONTAINER_NAME }} \
+              --restart always \
+              --network ${{ env.PROXY_NETWORK }} \
+              -e VIRTUAL_HOST=${{ env.DOMAIN }} \
+              -e VIRTUAL_PORT=8501 \
+              -e LETSENCRYPT_HOST=${{ env.DOMAIN }} \
+              -e LETSENCRYPT_EMAIL=${{ env.LETSENCRYPT_EMAIL }} \
+              -e TZ=Asia/Shanghai \
+              --env-file ${{ env.PROJECT_DIR }}/.env \
+              -v ${{ env.PROJECT_DIR }}/data/chat_history:/app/chat_history \
+              --label com.centurylinklabs.watchtower.enable=true \
+              ${{ env.IMAGE_NAME }}:latest
+
+            docker image prune -f
+
+            echo ""
+            echo "📊 运行状态:"
+            docker ps --filter name=${{ env.CONTAINER_NAME }}
+            echo ""
+            echo "✅ 部署完成！访问 https://${{ env.DOMAIN }} 查看效果"

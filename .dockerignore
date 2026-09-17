@@ -1,0 +1,30 @@
+# 设计素材（不进镜像）
+素材/
+
+# 版本控制
+.git/
+.github/
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# IDE
+.idea/
+.vscode/
+
+# 运行时数据（容器内通过 volume 挂载宿主机目录，不打进镜像）
+chat_history/
+chroma_db/
+md5.text
+
+# 密钥与环境
+.env
+*.env
+
+# 文档与临时文件
+README.md
+参考.md
+_tmp_*.py
+docclaw-main/
