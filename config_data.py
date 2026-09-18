@@ -27,6 +27,23 @@ similarity_threshold = 1            # 检索返回匹配的文档数量（相似
 """
 3,rag.py
 """
-embedding_model_name = "text-embedding-v4"
-chat_model_name = "qwen3-max"
+
+# ---- 聊天模型 ----
+CHAT_MODELS = [
+    {"id": "qwen3.7-flash", "name": "Qwen3.7 Flash · 轻量"},
+    {"id": "qwen3.7-plus",  "name": "Qwen3.7 Plus · 均衡", "default": True},
+    {"id": "qwen3.7-max",   "name": "Qwen3.7 Max · 旗舰"},
+    {"id": "qwen3.8-flash", "name": "Qwen3.8 Flash · 最新"},
+    {"id": "qwen3.8-max",   "name": "Qwen3.8 Max · 最新"},
+]
+
+# ---- 嵌入模型 ----
+EMBEDDING_MODELS = [
+    {"id": "qwen3.7-text-embedding", "name": "Qwen3.7 Text Embedding", "default": True},
+]
+
+# 默认模型：无前端选择时（如后端 __main__ 调试）使用
+dashscope_base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+default_chat_model = next(m["id"] for m in CHAT_MODELS if m.get("default"))
+embedding_model_name = next(m["id"] for m in EMBEDDING_MODELS if m.get("default"))
 

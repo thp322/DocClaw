@@ -540,6 +540,15 @@ footer,
     color: #9ca3af !important;
 }
 
+.history-model {
+    font-size: 0.78rem !important;
+    color: #6366f1 !important;
+    background: #eef2ff !important;
+    padding: 2px 10px !important;
+    border-radius: 999px !important;
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace !important;
+}
+
 .history-preview {
     color: #4b5563 !important;
     font-size: 0.92rem !important;

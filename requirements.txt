@@ -1,4 +1,5 @@
 streamlit
+dashscope
 langchain-core
 langchain-community
-dashscope
+langchain-openai

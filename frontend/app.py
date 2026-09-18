@@ -249,9 +249,24 @@ TRY_EXAMPLES = [
     "帮我把v1.0 的 PRD 保存到本地，并将 v2.0 的 PRD 同步到 Wiki 中",
 ]
 
-# 模型下拉框选项（todo纯前端展示，接入后端后再改）
-CHAT_MODELS = ["qwen3-max"]
-EMBEDDING_MODELS = ["text-embedding-v3", "text-embedding-v4"]
+# ---- 模型下拉框 ----
+CHAT_MODEL_IDS = [m["id"] for m in config.CHAT_MODELS]
+CHAT_MODEL_NAMES = {m["id"]: m["name"] for m in config.CHAT_MODELS}
+DEFAULT_CHAT_MODEL = config.default_chat_model
+
+EMBED_MODEL_IDS = [m["id"] for m in config.EMBEDDING_MODELS]
+EMBED_MODEL_NAMES = {m["id"]: m["name"] for m in config.EMBEDDING_MODELS}
+DEFAULT_EMBED_MODEL = config.embedding_model_name
+
+
+def _on_chat_model_change():
+    """切换聊天模型回调：用新模型重建 RAG 实例
+    会话历史按 session_id 存文件，重建实例后多轮上下文仍然连续
+    """
+    if "rag" in st.session_state:
+        new_model = st.session_state["zooop_chat_model"]
+        st.session_state["rag"] = IdeaRag(new_model)
+        st.toast(f"已切换聊天模型：{CHAT_MODEL_NAMES[new_model]}")
 
 
 def render_workspace():
@@ -327,9 +342,17 @@ def _render_home():
             col_model, col_embed, col_gen = st.columns(3)   # 等宽三列
             with col_model:
                 # key 与 _fill_input 回填机制同理：选择结果存 session_state
-                st.selectbox("聊天模型", CHAT_MODELS, key="zooop_chat_model")
+                # 落地页与需求拆解页共用同一个 key，模型选择跨页保持一致
+                st.selectbox("聊天模型", CHAT_MODEL_IDS,
+                             index=CHAT_MODEL_IDS.index(DEFAULT_CHAT_MODEL),
+                             format_func=CHAT_MODEL_NAMES.get,
+                             on_change=_on_chat_model_change,
+                             key="zooop_chat_model")
             with col_embed:
-                st.selectbox("嵌入模型", EMBEDDING_MODELS, key="zooop_embed_model")
+                st.selectbox("嵌入模型", EMBED_MODEL_IDS,
+                             index=EMBED_MODEL_IDS.index(DEFAULT_EMBED_MODEL),
+                             format_func=EMBED_MODEL_NAMES.get,
+                             key="zooop_embed_model")
             with col_gen:
                 st.markdown("<br>", unsafe_allow_html=True)
                 generate = st.button("生成", type="primary", use_container_width=True,
@@ -493,6 +516,7 @@ def _render_history_list():
                     <span class="history-badge">{_html_escape(rec["source"])}</span>
                     <span class="history-time">{_html_escape(rec["created_at"])} </span>
                     <span class="history-rounds">{rounds} 轮对话</span>
+                    <span class="history-model">{_html_escape(rec["chat_model"])}</span>
                 </div>
                 """, unsafe_allow_html=True)
                 preview = rec["preview"] or "（无用户消息）"
@@ -551,7 +575,8 @@ def _render_history_detail(file_name: str):
             对话详情
         </div>
         <div class="history-detail-info">
-            对话时间：{_html_escape(record.get("created_at", "未知"))}
+            ⏱ 对话时间：{_html_escape(record.get("created_at", "未知"))}
+            　|　🤖 聊天模型：{_html_escape(record.get("chat_model", "未知模型"))}
             　|　🆔 会话 ID：{_html_escape(record.get("session_id", "未知"))}
         </div>
     </div>
@@ -572,13 +597,23 @@ def _render_idea():
     """需求拆解页"""
     st.markdown('<h1 class="page-title">需求拆解</h1>', unsafe_allow_html=True)
 
+    col_model, _, _, _, _ = st.columns(5)
+    with col_model:
+        st.selectbox("聊天模型", CHAT_MODEL_IDS,
+                     index=CHAT_MODEL_IDS.index(DEFAULT_CHAT_MODEL),
+                     format_func=CHAT_MODEL_NAMES.get,
+                     on_change=_on_chat_model_change,
+                     key="zooop_chat_model")
+
     if "message" not in st.session_state:
         st.session_state["message"] = [{"role": "assistant", "content": "请输入您对于产品模糊的idea，我会以【QUESTION】为开头反问您直至弄清您的想法，最后我会以【DESC】为开头为您输出初级的产品描述，随后为您详细地拆解产品需求！"}]
 
     if "rag" not in st.session_state:
-        st.session_state["rag"] = IdeaRag()
+        # 使用下拉框当前选中的模型（落地页先选好再进入时同样生效）
+        st.session_state["rag"] = IdeaRag(
+            st.session_state.get("zooop_chat_model", DEFAULT_CHAT_MODEL))
         # 为本次浏览器会话分配唯一 session_id
-        # todo接入登录后，可替换为 f"{user_id}_{conversation_id}" 
+        # todo接入登录后，可替换为 f"{user_id}_{conversation_id}"
         st.session_state["session_id"] = uuid.uuid4().hex
 
     for message in st.session_state["message"]:

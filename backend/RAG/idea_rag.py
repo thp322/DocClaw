@@ -10,7 +10,8 @@ sys.path.insert(0, _CURRENT_DIR)           # -> from file_history_store import .
 from langchain_core.runnables import RunnableWithMessageHistory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
-from langchain_community.chat_models.tongyi import ChatTongyi
+# from langchain_community.chat_models.tongyi import ChatTongyi
+from langchain_openai import ChatOpenAI
 
 from file_history_store import get_history, build_history_saver
 import config_data as config
@@ -46,7 +47,10 @@ def format_requirement_json(json_text):
 
 
 class IdeaRag(object):
-    def __init__(self):
+    def __init__(self, chat_model_name=None):
+        # 前端切换模型时传入新模型名重建实例；不传则使用 config_data 中的默认模型
+        # 历史记录按 session_id 存文件，重建实例不影响多轮上下文连续性
+        self.chat_model_name = chat_model_name or config.default_chat_model
 
         self.describe_prompt_template = ChatPromptTemplate.from_messages(
             [
@@ -93,7 +97,14 @@ class IdeaRag(object):
             ]
         )
 
-        self.chat_model = ChatTongyi(model=config.chat_model_name, streaming=True)
+        # 走百炼 OpenAI 兼容端点：qwen3.7/3.8 新模型只在此端点提供
+        # （旧 DashScope 原生端点会报 400 url error）；API Key 仍用 DASHSCOPE_API_KEY
+        self.chat_model = ChatOpenAI(
+            model=self.chat_model_name,
+            api_key=os.environ.get("DASHSCOPE_API_KEY"),
+            base_url=config.dashscope_base_url,
+            streaming=True,
+        )
 
         # 阶段一链：模糊 idea -> 多轮追问 -> 初级产品描述（挂文件历史）
         self.chain = self.__get_chain()
@@ -148,7 +159,9 @@ class IdeaRag(object):
     def breakdown_stream(self, product_description, session_config):
         """阶段二流式对话：输出格式化需求卡片，流结束后保存会话快照"""
         session_id = session_config["configurable"]["session_id"]
-        chain = self.breakdown_chain | build_history_saver("需求拆解", session_id)
+        # 记录完成本次需求拆解时实际使用的聊天模型
+        chain = self.breakdown_chain | build_history_saver(
+            "需求拆解", session_id, self.chat_model_name)
         yield from chain.stream({"product_description": product_description})
 
 
@@ -167,3 +180,9 @@ if __name__ == '__main__':
     # 查看历史记录
     messages = IdeaRag().read_history(session_config)
 
+"""
+我想做一个面向独立开发者的AI笔记工具
+我想做一个日常饮食记录和推荐的agent应用
+我想要一个小程序，用来管理家里东西
+我想做一个虚拟货币交易网站
+"""

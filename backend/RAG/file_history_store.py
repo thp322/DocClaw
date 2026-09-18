@@ -22,8 +22,14 @@ def get_history(session_id):
     return FileChatMessageHistory(session_id, _CHAT_HISTORY_DIR)
 
 
-def save_conversation_record(session_id, source):
-    """保存一次会话快照到 chat_history/history/ 目录"""
+def save_conversation_record(session_id, source, chat_model=None):
+    """保存一次会话快照到 chat_history/history/ 目录
+
+    Args:
+        session_id: 会话 ID
+        source: 功能来源（如「需求拆解」）
+        chat_model: 本次会话使用的聊天模型 ID
+    """
     now = datetime.now()
     file_name = f"{now.strftime('%Y%m%d_%H%M%S')}_{source}.json"
     file_path = os.path.join(_HISTORY_RECORD_DIR, file_name)
@@ -39,6 +45,7 @@ def save_conversation_record(session_id, source):
     record = {
         "session_id": session_id,
         "source": source,
+        "chat_model": chat_model,
         "created_at": now.strftime("%Y-%m-%d %H:%M:%S"),
         "messages": messages,
     }
@@ -49,13 +56,19 @@ def save_conversation_record(session_id, source):
     return file_path
 
 
-def build_history_saver(source, session_id):
-    """构造一个可挂在任意 LCEL 链末尾的「会话快照保存」节点"""
+def build_history_saver(source, session_id, chat_model=None):
+    """构造一个可挂在任意 LCEL 链末尾的「会话快照保存」节点
+
+    Args:
+        source: 功能来源
+        session_id: 会话 ID
+        chat_model: 保存快照时记录使用的聊天模型 ID
+    """
     def _save_node(chain_output):
         # 阶段二链对话补录进会话
         if isinstance(chain_output, str) and chain_output.strip():
             get_history(session_id).add_messages([AIMessage(content=chain_output)])
-        save_conversation_record(session_id, source)
+        save_conversation_record(session_id, source, chat_model)
         return chain_output
 
     return _save_node
@@ -86,6 +99,7 @@ def list_conversation_records():
             "file_name": file_name,
             "session_id": data.get("session_id", ""),
             "source": data.get("source", "未知来源"),
+            "chat_model": data.get("chat_model") or "未知模型",
             "created_at": data.get("created_at", ""),
             "message_count": len(messages),
             "preview": preview,
