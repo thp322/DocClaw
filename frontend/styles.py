@@ -11,6 +11,8 @@
 
 LANDING_CSS = """
 <style>
+/* 落地页不渲染任何侧边栏内容：整个侧边栏容器、顶栏（含移动端的
+   侧边栏展开按钮 stExpandSidebarButton）都隐藏，避免出现空抽屉入口 */
 [data-testid="stSidebar"],
 [data-testid="stHeader"],
 footer,
@@ -164,42 +166,98 @@ WORKSPACE_CSS = """
 [data-testid="stSidebar"] {
     background: #f8f9fc !important;
     border-right: 1px solid #e5e7eb !important;
-    width: 240px !important;
-    min-width: 240px !important;
-    max-width: 240px !important;
-    height: 100vh !important;
-    transform: none !important;
-}
-
-[data-testid="stSidebar"] > div:first-child {
-    width: 240px !important;
-    min-width: 240px !important;
-}
-
-[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
-    height: 100vh !important;
-    padding: 0 0.9rem 1rem 0.9rem !important;
-    position: relative !important;
 }
 
 [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
     padding: 0 !important;
 }
 
-[data-testid="stSidebarHeader"],
-[data-testid="stSidebarCollapseButton"],
-[data-testid="collapsedControl"] {
-    display: none !important;
+/* 桌面端（≥769px）：侧边栏固定 240px 常驻，隐藏原生折叠按钮
+   （导航互跳走侧边栏按钮，回首页走 Logo） */
+@media (min-width: 769px) {
+    [data-testid="stSidebar"] {
+        width: 240px !important;
+        min-width: 240px !important;
+        max-width: 240px !important;
+        height: 100vh !important;
+        transform: none !important;
+    }
+
+    [data-testid="stSidebar"] > div:first-child {
+        width: 240px !important;
+        min-width: 240px !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+        height: 100vh !important;
+        padding: 0 0.9rem 1rem 0.9rem !important;
+        position: relative !important;
+    }
+
+    [data-testid="stSidebarHeader"],
+    [data-testid="stSidebarCollapseButton"] {
+        display: none !important;
+    }
+}
+
+/* 移动端（≤768px）：保留 Streamlit 原生抽屉（默认折叠、遮罩、滑入动画），
+   不强制宽度和 transform；只统一内边距，并保留抽屉内的原生关闭按钮 */
+@media (max-width: 768px) {
+    [data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+        padding: 0 0.9rem 1rem 0.9rem !important;
+    }
+
+    [data-testid="stSidebarHeader"] {
+        height: auto !important;
+        padding: 0.7rem 0.2rem 0 0 !important;
+    }
+
+    [data-testid="stSidebarCollapseButton"] button {
+        color: #4f46e5 !important;
+    }
+
+    /* 版本号：桌面端是 fixed 贴底（宽度随 240px 侧栏）；
+       移动端抽屉宽度不固定，改为文档流内的普通块，避免相对视口错位 */
+    .sidebar-version {
+        position: static !important;
+        width: auto !important;
+        margin-top: 2rem !important;
+    }
+
+    /* 折叠状态下左上角的「展开侧边栏」唤起按钮（Streamlit 1.63 的
+       testid 为 stExpandSidebarButton，位于顶部 stToolbar 内）：
+       做成醒目的 44px 品牌色圆角按钮 */
+    [data-testid="stExpandSidebarButton"] {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 12px !important;
+        background: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        box-shadow: 0 4px 14px rgba(13, 31, 75, 0.14) !important;
+    }
+
+    [data-testid="stExpandSidebarButton"] svg {
+        color: #4f46e5 !important;
+        width: 24px !important;
+        height: 24px !important;
+    }
 }
 
 [data-testid="stHeader"] {
     background: transparent !important;
 }
 
-footer,
-.stDeployButton,
-.stAppToolbar {
-    display: none !important;
+/* 桌面端隐藏整个顶栏工具区（含展开按钮，桌面端侧栏常驻用不到）；
+   移动端在上面的媒体查询里保留显示，否则无法唤起侧边栏 */
+@media (min-width: 769px) {
+    footer,
+    .stDeployButton,
+    .stAppToolbar {
+        display: none !important;
+    }
 }
 
 .stApp {
