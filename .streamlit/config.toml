@@ -1,18 +1,16 @@
-# Streamlit 容器内运行配置（被工作目录 /app 下的 .streamlit/config.toml 自动加载）
+# Streamlit 项目级配置（本地运行 与 容器内运行 都会自动加载本文件）
+#
+# 注意：不要在这里写 address/port/headless——
+#   · 本地运行使用 Streamlit 默认值（localhost:8501，自动打开浏览器）
+#   · 容器内由 Dockerfile 的 CMD 命令行参数覆盖为 0.0.0.0:8501 + headless
+#     （命令行参数优先级高于本配置文件，两者互不干扰）
 
 [server]
-headless = true
-address = "0.0.0.0"
-port = 8501
-# 经 nginx-proxy 反代同源访问，关闭 CORS 限制
+# 经 nginx-proxy 同源反代，关闭 CORS 限制（本地运行会有一条提示，无害）
 enableCORS = false
-# nginx-proxy 会透传 X-Forwarded-Proto: https，Streamlit 据此识别 HTTPS
 enableXsrfProtection = true
 maxUploadSize = 200
 
 [browser]
 # 关闭官方遥测
 gatherUsageStats = false
-# 不在启动时自动弹出浏览器（容器内无桌面）
-serverAddress = "0.0.0.0"
-serverPort = 8501
